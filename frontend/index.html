@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VOIS Data Transformation Studio</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="vois-palette">
+  <div id="loginView" class="auth-shell">
+    <div class="auth-card">
+      <div class="brand-mark">VO</div>
+      <p class="eyebrow">DATA TRANSFORMATION WORKBENCH</p>
+      <h1>VOIS Data Transformation Studio</h1>
+      <p class="muted">Upload mapping workbooks and turn transformation rules into reviewable SQL.</p>
+      <form id="loginForm">
+        <label>Email or username<input id="username" required value="admin" /></label>
+        <label>Password<input id="password" type="password" required value="transform123" /></label>
+        <button class="primary wide" type="submit">Sign in</button>
+        <p id="loginError" class="error"></p>
+      </form>
+      <p class="demo-note">Demo login: <b>admin</b> / <b>transform123</b></p>
+    </div>
+  </div>
+
+  <div id="appView" class="app-shell hidden">
+    <aside class="sidebar">
+      <div class="sidebar-brand"><div class="brand-mark small">VO</div><span>VOIS</span></div>
+      <nav aria-label="Primary navigation"><button id="workspaceNav" class="nav-item active" aria-current="page" type="button">Workspace</button><button id="historyNav" class="nav-item" type="button">Query history</button><button id="settingsNav" class="nav-item" type="button">Settings</button></nav>
+      <div class="sidebar-foot"><span class="status-dot"></span> Local prototype<br /><button id="logoutBtn" class="link-btn">Sign out</button></div>
+    </aside>
+    <main class="main">
+      <header class="topbar"><div><p id="topbarEyebrow" class="eyebrow">WORKSPACE</p><h2 id="topbarTitle">Workbook to SQL</h2></div><div class="user-chip"><span class="avatar">A</span> Admin</div></header>
+      <section class="hero"><div><span class="pill">Rule-aware generation</span><h1>Inspect. Transform. Query.</h1><p>Upload a changing Excel mapping workbook. The parser finds sheets and headers by meaning, then builds SQL grouped by target table.</p></div><div class="hero-orb">↗</div></section>
+      <section class="grid two-col">
+        <div class="panel upload-panel"><div class="panel-head"><div><p class="eyebrow">1 / INPUT</p><h3>Upload workbook</h3></div><span class="file-type">.XLSX</span></div><label class="dropzone" id="dropzone"><input id="fileInput" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" /><span class="upload-icon">↑</span><strong>Drop Excel file here</strong><span>or click to browse</span></label><div id="fileMeta" class="file-meta hidden"></div><button id="scanBtn" class="primary wide" disabled>Scan workbook</button></div>
+        <div class="panel workflow-panel"><p class="eyebrow">2 / METHOD</p><h3>How this module works</h3><div class="method"><span>01</span><div><b>Discover</b><p>Find populated sheets and mapping headers without relying on fixed positions.</p></div></div><div class="method"><span>02</span><div><b>Classify</b><p>Separate direct mappings, derived rules, joins, aggregates, and reference examples.</p></div></div><div class="method"><span>03</span><div><b>Generate</b><p>Produce reviewable SQL per target table, with rule notes preserved.</p></div></div></div>
+      </section>
+      <section id="results" class="hidden">
+        <div class="section-title"><div><p class="eyebrow">3 / RESULTS</p><h3>Generated query workspace</h3><p class="section-subtitle">Select a row to inspect the exact SQL, source, target, and rule.</p></div><div class="actions"><select id="dialect"><option value="bigquery">BigQuery</option><option value="postgres">PostgreSQL</option><option value="snowflake">Snowflake</option></select><button id="downloadMapBtn" class="secondary" disabled>Download query map</button><button id="downloadBtn" class="secondary" disabled>Download all .sql</button></div></div>
+        <div id="summaryCards" class="summary-cards"></div>
+        <div class="row-browser panel"><div class="panel-head"><div><p class="eyebrow">ROW-LEVEL MAPPINGS</p><h3>Find a mapping row</h3></div><div class="row-filters"><button id="allRowsBtn" class="filter-btn active">All</button><button id="directRowsBtn" class="filter-btn">Direct</button><button id="derivedRowsBtn" class="filter-btn">Derived</button><input id="rowSearch" class="row-search" placeholder="Search target, source, sheet…" /></div></div><div class="row-toolbar"><span id="rowCountLabel" class="count"></span><span class="legend"><i class="legend-ready"></i> READY <i class="legend-review"></i> REVIEW</span></div><div id="rowList" class="row-list"></div></div>
+        <div class="results-layout"><div class="panel sheet-panel"><div class="panel-head"><h3>Detected sheets</h3><span id="sheetCount" class="count"></span></div><div id="sheetList" class="sheet-list"></div></div><div class="panel query-panel"><div class="query-header"><div><p class="eyebrow">SQL PREVIEW</p><h3 id="queryTitle">Select a mapping row</h3></div><div class="query-actions"><span id="queryStatus" class="status-pill hidden"></span><button id="copyBtn" class="copy-btn" disabled>Copy SQL</button><button id="downloadRowBtn" class="copy-btn" disabled>Download row</button></div></div><div id="rowMeta" class="row-meta hidden"></div><div class="query-tabs"><button id="sqlTab" class="query-tab active">Generated SQL</button><button id="ruleTab" class="query-tab">Original rule</button></div><pre id="queryCode" class="code"><span class="code-muted">Choose a mapping row to preview its SQL.</span></pre><pre id="ruleCode" class="rule-code hidden"><span class="code-muted">The original transformation rule will appear here.</span></pre></div></div>
+      </section>
+      <section id="historyView" class="hidden">
+        <div class="section-title"><div><p class="eyebrow">QUERY HISTORY</p><h3>Generated queries and comparison runs</h3><p class="section-subtitle">Every local demo run keeps the generated BigQuery SQL and comparison outcome together.</p></div><button id="clearHistoryBtn" class="secondary">Clear history</button></div>
+        <div id="historyList" class="history-list"></div>
+      </section>
+      <section id="settingsView" class="hidden">
+        <div class="section-title"><div><p class="eyebrow">SETTINGS</p><h3>BigQuery connection</h3><p class="section-subtitle">Update project, region, limits, and the local service-account file path. Secret JSON contents are never displayed.</p></div><span id="settingsStatus" class="status-pill">Local configuration</span></div>
+        <form id="settingsForm" class="panel settings-grid">
+          <label>Google Cloud project<input id="settingProject" name="project" placeholder="your-gcp-project-id" /></label>
+          <label>BigQuery location<input id="settingLocation" name="location" value="US" /></label>
+          <label class="settings-wide">Service-account JSON path<input id="settingCredentials" name="credentials_path" placeholder="C:\\secure\\gcp-service-account.json" /><small id="credentialStatus" class="count">Path only; credential contents are never uploaded.</small></label>
+          <div class="settings-actions"><button class="primary" type="submit">Save BigQuery settings</button><button id="testBigQueryBtn" class="secondary" type="button">Test BigQuery connection</button><button id="reloadSettingsBtn" class="secondary" type="button">Reload</button></div>
+        </form>
+      </section>
+      <footer>VOIS Data Transformation Studio · SQL is generated for review. Validate business rules and dialect-specific syntax before deployment.</footer>
+    </main>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

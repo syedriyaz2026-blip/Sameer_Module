@@ -1,0 +1,87 @@
+VOIS TRANSFORMSQL - WINDOWS POWERSHELL QUICK RUN
+===============================================
+
+Use this file after placing the complete Sameer_Module folder anywhere, including Downloads.
+Open PowerShell, change directory into this folder, then paste the commands below.
+
+IMPORTANT:
+- Do not paste a service-account JSON file into this folder.
+- The Settings page can update the same values later.
+- The first run opens backend/.env so you can enter the Google Cloud project and credential path.
+- The service account needs BigQuery Job User and BigQuery Data Viewer permissions.
+
+ONE-GO POWERSHELL START COMMANDS
+--------------------------------
+
+$ModuleRoot = (Get-Location).Path
+Set-Location $ModuleRoot
+
+if (-not (Test-Path -LiteralPath '.\backend\.env')) {
+    Copy-Item -LiteralPath '.\backend\.env.example' -Destination '.\backend\.env'
+}
+
+Start-Process -FilePath 'notepad.exe' -ArgumentList (Join-Path $ModuleRoot 'backend\.env') -Wait
+
+python -m pip install -r '.\backend\requirements.txt'
+
+# Stop only previous VOIS processes using these exact application ports.
+Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
+    Where-Object { $_.CommandLine -match 'transformsql_engine.py --serve --port 8081' } |
+    ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+
+Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
+    Where-Object { $_.CommandLine -match '-m http.server 8080' } |
+    ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+
+Start-Process -FilePath 'python' `
+    -ArgumentList 'transformsql_engine.py --serve --port 8081' `
+    -WorkingDirectory (Join-Path $ModuleRoot 'backend') `
+    -WindowStyle Hidden
+
+Start-Process -FilePath 'python' `
+    -ArgumentList '-m http.server 8080' `
+    -WorkingDirectory (Join-Path $ModuleRoot 'frontend') `
+    -WindowStyle Hidden
+
+Start-Sleep -Seconds 2
+
+Invoke-WebRequest 'http://localhost:8081/healthz' -UseBasicParsing
+Start-Process 'http://localhost:8080'
+
+LOCAL LOGIN
+-----------
+
+Username: admin
+Password: transform123
+
+BIGQUERY .ENV VALUES
+--------------------
+
+GOOGLE_CLOUD_PROJECT=your-gcp-project-id
+GOOGLE_APPLICATION_CREDENTIALS=C:\secure\gcp-service-account.json
+BIGQUERY_LOCATION=US
+BIGQUERY_MAX_ROWS=500
+BIGQUERY_MAX_BYTES_BILLED=1000000000
+
+All environment variables are loaded automatically from backend/.env when the backend starts.
+The VOIS Settings page is intentionally separate and shows only BigQuery connection settings:
+project, location, and credential path, plus save, reload, and connection test.
+
+STOP COMMANDS
+-------------
+
+Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
+    Where-Object { $_.CommandLine -match 'transformsql_engine.py --serve --port 8081' } |
+    ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+
+Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
+    Where-Object { $_.CommandLine -match '-m http.server 8080' } |
+    ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+
+URLS
+----
+
+VOIS UI: http://localhost:8080
+Backend health: http://localhost:8081/healthz
+Backend readiness: http://localhost:8081/readyz
+Settings API: http://localhost:8081/api/settings

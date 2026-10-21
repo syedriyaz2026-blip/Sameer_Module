@@ -1,0 +1,37 @@
+# TransformSQL backend engine
+
+`transformsql_engine.py` is intentionally self-contained. It contains workbook scanning, mapping detection, transformation classification, SQL generation, CLI execution, and the HTTP API.
+
+Install and run:
+
+```powershell
+pip install -r requirements.txt
+python transformsql_engine.py --serve --port 8081
+```
+
+Generate a file:
+
+```powershell
+python transformsql_engine.py input.xlsx --dialect bigquery --output generated.sql
+```
+
+The API result includes grouped `queries` and `row_queries`. Each row query includes source and target metadata, transformation type, original rule, generated expression, `READY`/`REVIEW` status, and executable SQL text.
+
+The default dialect is BigQuery Standard SQL. Use `--dialect bigquery` explicitly in automated jobs.
+
+## Run in BigQuery
+
+Install the BigQuery client:
+
+```powershell
+pip install -r requirements.txt
+```
+
+Copy `.env.example` to `.env` and set only `GOOGLE_CLOUD_PROJECT` and `GOOGLE_APPLICATION_CREDENTIALS` for the normal setup.
+The client uses Google Application Default Credentials or the service-account path supplied through the environment. Never commit `.env` or a service-account JSON file.
+
+After generating a row query in the UI, click **Run in BigQuery**. The result table is returned to the same interface. The backend limits displayed rows using `BIGQUERY_MAX_ROWS` and can enforce a cost ceiling with `BIGQUERY_MAX_BYTES_BILLED`.
+
+After a successful run, the UI automatically compares the generated result with the selected row's target table and target column. The comparison SQL is generated and executed privately by the backend and is never displayed or returned to the browser. The dashboard reports `PASS` or `FAIL`, row counts, mismatched values, and deviations.
+
+The frontend reads `/api/config` at startup. Demo credentials are enabled only when `ENV=local`; staging and production must set `DEMO_LOGIN_ENABLED=false` and use a real authentication layer before external deployment.
